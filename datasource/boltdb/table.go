@@ -132,8 +132,9 @@ func NewDataSource(db *bolt.DB, name string) (*StaticDataSource, error) {
 	m.db = db
 	m.tbl = tbl
 	m.bucketName = name
-	for i := range sch.Cols {
-		tbl.AddField(schema.NewFieldBase(sch.Cols[i], value.StringType, 64, "string"))
+	tbl.AddField(schema.NewFieldBase("id", value.IntType, 64, "int"))
+	for i := range sch.Cols[1:] {
+		tbl.AddField(schema.NewFieldBase(sch.Cols[i+1], value.StringType, 64, "string"))
 	}
 	m.tbl.SetColumns(sch.Cols)
 	if err := datasource.IntrospectTable(m.tbl, m.CreateIterator()); err != nil {
@@ -217,7 +218,7 @@ func (m *StaticDataSource) Next() schema.Message {
 				return nil
 			}
 			m.cursor = nextID
-			log.Println(nextID, row, colIdx, ">>>>")
+
 			return datasource.NewSqlDriverMessageMap(nextID, row, colIdx)
 		}
 	}

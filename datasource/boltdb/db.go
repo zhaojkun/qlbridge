@@ -132,8 +132,6 @@ func (m *Source) loadTable(tableName string) error {
 	if err != nil {
 		return err
 	}
-	log.Println(tableName, ">>>")
-	log.Printf("%p", tbl)
 	return datasource.IntrospectTable(tbl, iter)
 }
 

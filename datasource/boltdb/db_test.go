@@ -9,8 +9,9 @@ import (
 )
 
 type Person struct {
-	ID   string `db:"id"`
-	Name string `db:"name"`
+	ID      int64  `db:"id"`
+	Name    string `db:"name"`
+	Counter string `db:"counter"`
 }
 
 func (p *Person) TableName() string {
@@ -18,20 +19,18 @@ func (p *Person) TableName() string {
 }
 
 func TestDB(t *testing.T) {
-	ds, err := CreateDB("abc")
-	log.Println(ds, err)
-	ds.CreateTable("hello", 0, []string{"id", "name"})
+	ds, _ := CreateDB("abc")
+	ds.CreateTable("hello", 0, []string{"id", "name", "counter"})
 	originDB, _ := sql.Open("qlbridge", "abc")
 	db, err := gorm.Open("mysql", originDB)
 	if err != nil {
 		panic(err.Error())
 	}
 	defer db.Close()
-	log.Println(db)
-	db.Create(&Person{ID: "1", Name: "world"})
-	db.Create(&Person{ID: "2", Name: "world"})
-	var people []Person
 	db.LogMode(true)
+	db.Create(&Person{ID: 1, Name: "world", Counter: "20"})
+	db.Create(&Person{ID: 2, Name: "world", Counter: "30"})
+	var people []Person
 	err = db.Find(&people).Error
 	log.Println(people, err)
 }
