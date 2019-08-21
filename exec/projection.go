@@ -111,7 +111,6 @@ func (m *Projection) CloseFinal() error {
 
 // Create handler function for evaluation (ie, field selection from tuples)
 func (m *Projection) projectionEvaluator(isFinal bool) MessageHandler {
-
 	out := m.MessageOut()
 	columns := m.p.Stmt.Columns
 	colIndex := m.p.Stmt.ColIndexes()
@@ -197,6 +196,7 @@ func (m *Projection) projectionEvaluator(isFinal bool) MessageHandler {
 							row[colIdx] = v
 							colIdx += 1
 						}
+						colIndex = mt.ColIndex
 						colIdx--
 					}
 
@@ -226,7 +226,6 @@ func (m *Projection) projectionEvaluator(isFinal bool) MessageHandler {
 			//u.Infof("row: %#v", row)
 			//u.Infof("row cols: %v", colIndex)
 			outMsg = datasource.NewSqlDriverMessageMap(0, row, colIndex)
-
 		case expr.ContextReader:
 			//u.Warnf("nice, got context reader? %T", mt)
 			row := make([]driver.Value, len(columns))

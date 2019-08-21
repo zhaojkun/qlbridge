@@ -122,7 +122,8 @@ func (m *qlbConn) Exec(query string, args []driver.Value) (driver.Result, error)
 //
 func (m *qlbConn) Query(query string, args []driver.Value) (driver.Rows, error) {
 	stmt := &qlbStmt{conn: m, query: query}
-	return stmt.Query(args)
+	rows, err := stmt.Query(args)
+	return rows, err
 }
 
 // Prepare returns a prepared statement, bound to this connection.
@@ -252,15 +253,21 @@ func (m *qlbStmt) Query(args []driver.Value) (driver.Rows, error) {
 		u.Warnf("ctx? %v", job.Ctx)
 		return nil, fmt.Errorf("We could not recognize that as a select query: %T", job.Ctx.Stmt)
 	}
-
 	// Prepare a result writer, we manually append this task to end
 	// of job?
-	resultWriter := NewResultRows(ctx, sqlSelect.Columns.AliasedFieldNames())
+	colnames := sqlSelect.Columns.AliasedFieldNames()
+	if sqlSelect.Star {
+		tableName := sqlSelect.From[0].Name
+		tlb, err := ctx.Schema.Table(tableName)
+		if err == nil {
+			colnames = tlb.Columns()
+		}
+	}
+	resultWriter := NewResultRows(ctx, colnames)
 
 	job.RootTask.Add(resultWriter)
 
 	job.Setup()
-
 	// TODO:   this can't run in parallel-buffered mode?
 	// how to open in go-routine and still be able to send error to rows?
 	go func() {

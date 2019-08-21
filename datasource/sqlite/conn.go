@@ -12,6 +12,7 @@ import (
 	"github.com/dchest/siphash"
 	"github.com/google/btree"
 	"golang.org/x/net/context"
+
 	// Import driver for sqlite
 	_ "github.com/mattn/go-sqlite3"
 
