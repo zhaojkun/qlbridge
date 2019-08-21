@@ -225,6 +225,7 @@ func (m *Projection) projectionEvaluator(isFinal bool) MessageHandler {
 			}
 			//u.Infof("row: %#v", row)
 			//u.Infof("row cols: %v", colIndex)
+
 			outMsg = datasource.NewSqlDriverMessageMap(0, row, colIndex)
 		case expr.ContextReader:
 			//u.Warnf("nice, got context reader? %T", mt)

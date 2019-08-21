@@ -254,7 +254,7 @@ func msgToRow(msg schema.Message, cols []string, dest []driver.Value) error {
 		for i, key := range cols {
 			val, ok := mt.Get(key)
 			//u.Debugf("key=%v %T %v", key, val, val)
-			if ok && val != nil && !val.Nil() {
+			if ok && val != nil {
 				dest[i] = val.Value()
 				//u.Infof("key=%v   val=%v", key, val)
 			} else if val == nil {

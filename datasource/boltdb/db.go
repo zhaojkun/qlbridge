@@ -142,7 +142,7 @@ func (m *Source) Close() error { return nil }
 func (m *Source) Tables() []string { return m.tablenamelist }
 
 // CreateTable create a csv table in this source.
-func (m *Source) CreateTable(tableName string, indexCol int, cols []string) {
+func (m *Source) CreateTable(tableName string, indexCol int, cols []Field) {
 	if _, exists := m.tables[tableName]; exists {
 		return
 	}

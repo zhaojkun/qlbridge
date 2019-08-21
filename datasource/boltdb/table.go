@@ -103,14 +103,20 @@ type StaticDataSource struct {
 	max        int
 }
 
+type Field struct {
+	Name    string
+	ValType value.ValueType
+	Size    int
+}
+
 func init() {
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
 	gob.Register(time.Time{})
 }
 
 type dataSchema struct {
-	IndexedCol int      `json:"indexed_col"`
-	Cols       []string `json:"cols"`
+	IndexedCol int     `json:"indexed_col"`
+	Cols       []Field `json:"cols"`
 }
 
 func NewDataSource(db *bolt.DB, name string) (*StaticDataSource, error) {
@@ -132,11 +138,12 @@ func NewDataSource(db *bolt.DB, name string) (*StaticDataSource, error) {
 	m.db = db
 	m.tbl = tbl
 	m.bucketName = name
-	tbl.AddField(schema.NewFieldBase("id", value.IntType, 64, "int"))
-	for i := range sch.Cols[1:] {
-		tbl.AddField(schema.NewFieldBase(sch.Cols[i+1], value.StringType, 64, "string"))
+	var cols []string
+	for _, field := range sch.Cols {
+		tbl.AddField(schema.NewFieldBase(field.Name, field.ValType, field.Size, ""))
+		cols = append(cols, field.Name)
 	}
-	m.tbl.SetColumns(sch.Cols)
+	m.tbl.SetColumns(cols)
 	if err := datasource.IntrospectTable(m.tbl, m.CreateIterator()); err != nil {
 		u.Errorf("Could not introspect schema %v", err)
 	}
@@ -408,7 +415,6 @@ func (m *StaticDataSource) put(id uint64, row []driver.Value, colindex map[strin
 }
 
 func (m *StaticDataSource) get(id uint64) (row []driver.Value, colidx map[string]int, err error) {
-
 	var item *itemData
 	key := fmt.Sprint(id)
 	m.db.View(func(tx *bolt.Tx) error {
@@ -452,22 +458,25 @@ func (m *StaticDataSource) rangeloop(fn func(id uint64, row []driver.Value, coli
 }
 
 func (m *StaticDataSource) getNext(id uint64) (nextID uint64, row []driver.Value, colIdx map[string]int, err error) {
-	var key, val []byte
+	var dstKey, dstVal []byte
 	m.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(m.bucketName))
 		c := b.Cursor()
-		key, val = c.First()
-		if id == 0 {
-			return nil
+		key, val := c.First()
+		if id != 0 {
+			targetId := fmt.Sprint(id)
+			c.Seek([]byte(targetId))
+			key, val = c.Next()
 		}
-		targetId := fmt.Sprint(id)
-		c.Seek([]byte(targetId))
-		key, val = c.Next()
+		dstKey = make([]byte, len(key), len(key))
+		copy(dstKey, key)
+		dstVal = make([]byte, len(val), len(val))
+		copy(dstVal, val)
 		return nil
 	})
-	nextid, _ := strconv.Atoi(string(key))
+	nextid, _ := strconv.Atoi(string(dstKey))
 	nextID = uint64(nextid)
-	item, err := unmarshalItem(val)
+	item, err := unmarshalItem(dstVal)
 	if err != nil {
 		return
 	}
