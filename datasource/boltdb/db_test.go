@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/araddon/qlbridge/value"
 	"github.com/jinzhu/gorm"
 )
 
@@ -25,14 +24,7 @@ func (p *Person) TableName() string {
 
 func TestDB(t *testing.T) {
 	ds, _ := CreateDB("abc")
-	ds.CreateTable("hello", 0, []Field{
-		Field{"id", value.IntType, 64},
-		Field{"name", value.StringType, 64},
-		Field{"counter", value.StringType, 64},
-		Field{"size", value.IntType, 64},
-		Field{"created_at", value.TimeType, 64},
-		Field{"updated_at", value.TimeType, 64},
-	})
+	ds.CreateTable("hello", Person{})
 	originDB, _ := sql.Open("qlbridge", "abc")
 	db, err := gorm.Open("mysql", originDB)
 	if err != nil {
@@ -47,4 +39,10 @@ func TestDB(t *testing.T) {
 	var people []Person
 	err = db.Find(&people).Error
 	log.Println(people, err)
+}
+
+func TestStruct2Fields(t *testing.T) {
+	rs, err := struct2Fields(Person{})
+	log.Println(err)
+	log.Println(rs)
 }

@@ -133,9 +133,13 @@ func (m *Source) Close() error { return nil }
 func (m *Source) Tables() []string { return m.tablenamelist }
 
 // CreateTable create a csv table in this source.
-func (m *Source) CreateTable(tableName string, indexCol int, cols []Field) {
+func (m *Source) CreateTable(tableName string, data interface{}) error {
 	if _, exists := m.tables[tableName]; exists {
-		return
+		return nil
+	}
+	cols, err := struct2Fields(data)
+	if err != nil {
+		return err
 	}
 	m.db.Update(func(tx *bolt.Tx) error {
 		b, _ := tx.CreateBucketIfNotExists([]byte("schema"))
@@ -151,4 +155,5 @@ func (m *Source) CreateTable(tableName string, indexCol int, cols []Field) {
 	m.tablenamelist = append(m.tablenamelist, tableName)
 	m.loadTable(tableName)
 	schema.DefaultRegistry().SchemaRefresh(m.dbname)
+	return nil
 }
