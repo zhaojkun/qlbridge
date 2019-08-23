@@ -24,15 +24,6 @@ var (
 	_ schema.ConnDeletion = (*Table)(nil)
 )
 
-func CreateDB(name string) (*Source, error) {
-	db := New(name)
-	if err := schema.RegisterSourceAsSchema(name, db); err != nil {
-		u.Errorf("Could not read schema %v", err)
-		return nil, err
-	}
-	return db, nil
-}
-
 // Source DataSource for testing creates an in memory b-tree per "table".
 // Is not thread safe.
 type Source struct {

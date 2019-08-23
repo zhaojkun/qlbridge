@@ -101,6 +101,7 @@ type StaticDataSource struct {
 	db         *bolt.DB
 	bucketName string
 	max        int
+	sch        *dataSchema
 }
 
 type Field struct {
@@ -138,6 +139,7 @@ func NewDataSource(db *bolt.DB, name string) (*StaticDataSource, error) {
 	m.db = db
 	m.tbl = tbl
 	m.bucketName = name
+	m.sch = &sch
 	var cols []string
 	for _, field := range sch.Cols {
 		tbl.AddField(schema.NewFieldBase(field.Name, field.ValType, field.Size, ""))
@@ -414,7 +416,7 @@ func (m *StaticDataSource) put(id uint64, row []driver.Value, colindex map[strin
 	return err
 }
 
-func (m *StaticDataSource) get(id uint64) (row []driver.Value, colidx map[string]int, err error) {
+func (m *StaticDataSource) get(id uint64) (row []driver.Value, colIdx map[string]int, err error) {
 	var item *itemData
 	key := fmt.Sprint(id)
 	m.db.View(func(tx *bolt.Tx) error {
@@ -426,7 +428,10 @@ func (m *StaticDataSource) get(id uint64) (row []driver.Value, colidx map[string
 	if err != nil {
 		return
 	}
-	return item.Row, item.ColIndex, nil
+	row = item.Row
+	colIdx = item.ColIndex
+	m.parseRow(row, colIdx)
+	return row, colIdx, nil
 }
 
 func (m *StaticDataSource) delete(id uint64) error {
@@ -480,5 +485,23 @@ func (m *StaticDataSource) getNext(id uint64) (nextID uint64, row []driver.Value
 	if err != nil {
 		return
 	}
-	return nextID, item.Row, item.ColIndex, nil
+	row = item.Row
+	colIdx = item.ColIndex
+	m.parseRow(row, colIdx)
+	return nextID, row, colIdx, nil
+}
+
+const MysqlTimeFormat = "2006-01-02 15:04:05.000000000"
+
+func (m *StaticDataSource) parseRow(row []driver.Value, colIdx map[string]int) {
+	if m.sch != nil {
+		for _, idx := range colIdx {
+			if m.sch.Cols[idx].ValType == value.TimeType {
+				str, _ := row[idx].(string)
+				t, _ := time.Parse(MysqlTimeFormat, str)
+				row[idx] = t
+			}
+		}
+	}
+	return
 }

@@ -221,7 +221,6 @@ func resultWrite(m *ResultWriter) MessageHandler {
 }
 
 func msgToRow(msg schema.Message, cols []string, dest []driver.Value) error {
-
 	//u.Debugf("msg? %v  %T \n%p %v", msg, msg, dest, dest)
 	switch mt := msg.Body().(type) {
 	/*

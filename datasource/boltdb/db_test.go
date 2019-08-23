@@ -16,6 +16,7 @@ type Person struct {
 	Counter   string    `db:"counter"`
 	Size      int       `db:"size"`
 	CreatedAt time.Time `gorm:"column:created_at"`
+	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
 
 func (p *Person) TableName() string {
@@ -30,6 +31,7 @@ func TestDB(t *testing.T) {
 		Field{"counter", value.StringType, 64},
 		Field{"size", value.IntType, 64},
 		Field{"created_at", value.TimeType, 64},
+		Field{"updated_at", value.TimeType, 64},
 	})
 	originDB, _ := sql.Open("qlbridge", "abc")
 	db, err := gorm.Open("mysql", originDB)
@@ -38,11 +40,11 @@ func TestDB(t *testing.T) {
 	}
 	defer db.Close()
 	db.LogMode(true)
-	db.Create(&Person{ID: 1, Name: "world", Counter: "abc"})
-	db.Create(&Person{ID: 2, Name: "world", Counter: ""})
-	db.Create(&Person{ID: 3, Name: "world", Counter: "20000"})
+	db.Create(&Person{ID: 1, Name: "world", Counter: "abc", CreatedAt: time.Now()})
+	db.Create(&Person{ID: 2, Name: "world", Counter: "", CreatedAt: time.Now()})
+	db.Create(&Person{ID: 3, Name: "world", Counter: "20000", CreatedAt: time.Now()})
 	db.Create(&Person{ID: 4, Name: "world4"})
 	var people []Person
-	err = db.Select("id,name,counter").Find(&people).Error
+	err = db.Find(&people).Error
 	log.Println(people, err)
 }
